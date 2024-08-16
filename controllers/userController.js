@@ -8,17 +8,26 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const getAllUsers = async (req, res) => {
   try {
-    const user = await User.find(req.query);
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching users", error });
-  }
+    const students = await User.Student.find({});
+    const instructors = await User.Instructor.find({});
+    const admins = await User.Admin.find({});
+
+    const users = [...students, ...instructors, ...admins];
+    res.json({ users });
+} catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error: error.message });
+}
 };
 
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    let user;
+
+    const existingUser = await User.Student.findOne({ email }) || await User.Instructor.findOne({ email }) || await User.Admin.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }else{
+      let user;
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -36,7 +45,9 @@ const registerUser = async (req, res) => {
 
     await user.save();
     res.status(201).json({ message: `${role} registered successfully`, user });
-} catch (error) {
+}
+    }
+     catch (error) {
     res.status(500).json({ message: 'Error registering user', error: error.message });
 }
 };
@@ -44,35 +55,25 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    let user = await User.Student.findOne({ email }) || await User.Instructor.findOne({ email }) || await User.Admin.findOne({ email });
 
-    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "user not found" });
+        return res.status(404).json({ message: 'User not found' });
     }
 
-    // const isMatch = await bcrypt.compare(password, user.password);
-    const isMatch = bcrypt.compareSync(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password)
+
+    console.log(isMatch)
+
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+        return res.status(400).json({ message: 'Invalid password' });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.status(200).json({
-      message: "User logged in successfully",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ message: 'Login successful', token });
+} catch (error) {
+    res.status(500).json({ message: 'Error logging in', error: error.message });
+}
 };
 
 const getUserDetails = async (req, res) => {
@@ -93,14 +94,18 @@ const getUserDetails = async (req, res) => {
 
  const deleteUser = async (req, res) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.userId);
-    if (!deletedUser) {
-      return res.status(404).json({ message: "User not found" });
+    const  id  = req.params.userId;
+   
+    let user = await User.Student.findByIdAndDelete(id) || await User.Instructor.findByIdAndDelete(id) || await User.Admin.findByIdAndDelete(id);
+
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json({ message: "User deleted" });
-  } catch (error) {
-    res.status(404).json({ message: "User Not Deleted", error });
-  }
+
+    res.json({ message: 'User deleted successfully' });
+} catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error: error.message });
+}
 };
 
 module.exports = {
