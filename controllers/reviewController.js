@@ -73,10 +73,26 @@ const deleteReview = async (req, res) => {
     }
 };
 
+const getReviewsByCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const courseReviews = await Review.find({ course: courseId }).exec();
+
+        if (!courseReviews || courseReviews.length === 0) {
+            return res.status(404).json({ message: "No reviews found for this course" });
+        }
+
+        res.status(200).json(courseReviews);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching course reviews", error: error.message });
+    }
+};
+
 module.exports = {
     getAllReview,
     getReviewById,
     addNewReview,
     updateReview,
-    deleteReview
+    deleteReview,
+    getReviewsByCourse
 };
