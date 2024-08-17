@@ -70,7 +70,10 @@ const loginUser = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ message: 'Login successful', token });
+    
+    res.cookie('token', token , {httpOnly: true});
+    res.send('Login Success')
+
 } catch (error) {
     res.status(500).json({ message: 'Error logging in', error: error.message });
 }
@@ -78,18 +81,15 @@ const loginUser = async (req, res) => {
 
 const getUserDetails = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const students = await User.Student.find({});
+    const instructors = await User.Instructor.find({});
+    const admins = await User.Admin.find({});
 
-    const user = await User.findById(userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json({ user });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+    const users = [...students, ...instructors, ...admins];
+    res.json({ users });
+} catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error: error.message });
+}
 };
 
  const deleteUser = async (req, res) => {
