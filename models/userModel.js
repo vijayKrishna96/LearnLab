@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-// Define the base User schema with the discriminatorKey
+//  base User schema with the discriminatorKey
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     email: { type: String, unique: true, required: true, trim: true, lowercase: true },
@@ -10,35 +10,17 @@ const userSchema = new mongoose.Schema({
     profilePicture: { url: { type: String, default: '' }},
 }, { timestamps: true, discriminatorKey: 'role' });
 
-// Password hashing middleware
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (err) {
-        console.error('Error hashing the password:', err);
-        next(err);
-    }
-});
-
-// Method to compare passwords
-userSchema.methods.comparePassword = async function (candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// Create the base User model
+//  base User model
 const User = mongoose.model('User', userSchema);
 
-// Define the Student schema and discriminator
+//  Student schema and discriminator
 const studentSchema = new mongoose.Schema({
     courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
 });
 
 const Student = User.discriminator('student', studentSchema);
 
-// Define the Instructor schema and discriminator
+//  Instructor schema and discriminator
 const instructorSchema = new mongoose.Schema({
     bio: { type: String, default: '' },
     expertise: [{ type: String }],
@@ -48,7 +30,7 @@ const instructorSchema = new mongoose.Schema({
 
 const Instructor = User.discriminator('instructor', instructorSchema);
 
-// Define the Admin schema and discriminator
+//  Admin schema and discriminator
 const adminSchema = new mongoose.Schema({
     // Add any admin-specific fields if needed
 });

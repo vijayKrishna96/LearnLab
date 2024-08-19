@@ -25,7 +25,7 @@ const getCartById = async (req, res) => {
 };
 
 // Add a new cart
-const addNewCart = async (req, res) => {
+const addItemtoCart = async (req, res) => {
     try {
         const cartData = req.body;
         const cart = new Cart(cartData); 
@@ -72,7 +72,7 @@ const deleteCart = async (req, res) => {
 module.exports = {
     getAllCart,
     getCartById,
-    addNewCart,
+    addItemtoCart,
     updateCart,
     deleteCart
 };
