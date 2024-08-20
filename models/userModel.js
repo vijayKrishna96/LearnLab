@@ -32,7 +32,7 @@ const Instructor = User.discriminator('instructor', instructorSchema);
 
 //  Admin schema and discriminator
 const adminSchema = new mongoose.Schema({
-    // Add any admin-specific fields if needed
+    // Add any admin-specific fields 
 });
 
 const Admin = User.discriminator('admin', adminSchema);

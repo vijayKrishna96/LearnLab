@@ -1,11 +1,12 @@
 const User = require('../models/userModel')
 const bcrypt = require("bcrypt");
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { generateUserToken } = require('../utils/generateToken');
 
 
 const loginUser = async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password , role } = req.body;
   
       // Check if user exists in any of the roles (Student, Instructor, Admin)
       const user =
@@ -25,9 +26,7 @@ const loginUser = async (req, res) => {
       }
   
       // Generate JWT token
-      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-        expiresIn: '1h',
-      });
+      const token = generateUserToken(user.email , user.role)
   
       // Set token in an HTTP-only cookie
       res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });

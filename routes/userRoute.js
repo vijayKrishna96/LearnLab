@@ -1,17 +1,23 @@
 const express = require('express');
-const { getAllUsers, getUsersById, registerUser, updateUser, deleteUser, } = require('../controllers/userController');
+const { getAllUsers, getUsersById, registerUser, updateUser, deleteUser,  userProfile, checkUser } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/Protected');
+const { authUser } = require('../middleware/userAuth');
 const router = express.Router();
 
 
-router.get ('/users' , getAllUsers);
+router.get ('/profile' ,authUser,  userProfile);
 
-router.get('/:userId' , getUsersById)
+router.get('/users' , getAllUsers)
 
-router.post('/register' , registerUser)
+router.get('/Checkuser' ,authUser, checkUser)
 
-router.patch('/update/:userId' , updateUser)
+router.get('/:userId' , getUsersById);
 
-router.delete('/delete/:userId', protect , admin , deleteUser)
+router.post('/register' , registerUser);
+
+router.patch('/update/:userId' , updateUser);
+
+router.delete('/delete/:userId', protect , admin , deleteUser);
+
 
 module.exports = router;
