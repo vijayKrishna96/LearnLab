@@ -11,6 +11,8 @@ const reviewRoute = require('./routes/reviewRoute.js')
 const cartRoute = require('./routes/cartRoute.js')
 const categoryRoute = require('./routes/categoryRoute.js')
 
+const authRoute = require('./routes/authRoute.js')
+
 const app = express()
 const port = process.env.PORT
 
@@ -30,6 +32,7 @@ app.use('/review', reviewRoute)
 app.use('/cart', cartRoute)
 app.use('/category', categoryRoute)
 
+app.use('/auth' , authRoute)
 
 app.listen(port , ()=> {
     console.log(`App Listening on port ${port}`)

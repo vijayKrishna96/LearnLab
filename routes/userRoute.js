@@ -1,20 +1,17 @@
 const express = require('express');
+const { getAllUsers, getUsersById, registerUser, updateUser, deleteUser, } = require('../controllers/userController');
+const { protect, admin } = require('../middleware/Protected');
 const router = express.Router();
 
-const { registerUser, loginUser, getUserDetails, getAllUsers, deleteUser } = require('../controllers/userController');
-const { protect, admin } = require('../middleware/userAuth');
 
-// Route for registering a new user
-router.post('/register', registerUser);
+router.get ('/users' , getAllUsers);
 
-// Route for logging in a user
-router.post('/login', loginUser);
+router.get('/:userId' , getUsersById)
 
-// Route for getting user details 
-router.get('/me',  getUserDetails);
+router.post('/register' , registerUser)
 
-router.get('/users', getAllUsers)
+router.patch('/update/:userId' , updateUser)
 
-router.delete('/:userId', protect, admin , deleteUser)
+router.delete('/delete/:userId', protect , admin , deleteUser)
 
 module.exports = router;
