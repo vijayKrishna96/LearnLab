@@ -10,6 +10,7 @@ const courseRoute = require('./routes/courseRoute.js')
 const reviewRoute = require('./routes/reviewRoute.js')
 const cartRoute = require('./routes/cartRoute.js')
 const categoryRoute = require('./routes/categoryRoute.js')
+const AssignmentRoute = require('./routes/assignmentRoute.js')
 
 const authRoute = require('./routes/authRoute.js')
 
@@ -28,9 +29,10 @@ app.use(cors({
 
 app.use('/user', userRoute)
 app.use('/course', courseRoute)
-app.use('/review', reviewRoute)
+app.use('/rating', reviewRoute)
 app.use('/cart', cartRoute)
 app.use('/category', categoryRoute)
+app.use('/assignment',AssignmentRoute)
 
 app.use('/auth' , authRoute)
 

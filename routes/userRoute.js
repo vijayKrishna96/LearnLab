@@ -11,13 +11,13 @@ router.get('/users' , getAllUsers)
 
 router.get('/Checkuser' ,authUser, checkUser)
 
-router.get('/:userId' , getUsersById);
+router.get('/:userId' , protect , admin, getUsersById);
 
 router.post('/register' , registerUser);
 
 router.patch('/update/:userId' , updateUser);
 
-router.delete('/delete/:userId', protect , admin , deleteUser);
+router.delete('/delete/:userId', deleteUser);
 
 
 module.exports = router;

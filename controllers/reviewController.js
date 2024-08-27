@@ -28,6 +28,10 @@ const addNewReview = async (req, res) => {
     try {
         const { studentId, courseId, rating, comment } = req.body;
 
+        if (!studentId || !courseId) {
+            return res.status(400).json({ message: 'Student ID and Course ID are required' });
+        }
+
         const review = new Review({
             student: studentId,
             course: courseId,

@@ -1,6 +1,5 @@
 const User = require('../models/userModel')
-const hash = require('bcrypt')
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt')
 const { generateUserToken } = require('../utils/generateToken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -53,10 +52,10 @@ const registerUser = async (req, res) => {
       let user;
 
       // Hash the password
-      const hashedPassword = await hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       if (role === "student") {
-        user = new Student({
+        user = new User.Student({
           name,
           email,
           password: hashedPassword,
@@ -64,7 +63,7 @@ const registerUser = async (req, res) => {
         });
       } else if (role === "instructor") {
         const { bio, expertise } = req.body;
-        user = new Instructor({
+        user = new User.Instructor({
           name,
           email,
           password: hashedPassword,
@@ -73,7 +72,7 @@ const registerUser = async (req, res) => {
           profilePicture,
         });
       } else if (role === "admin") {
-        user = new Admin({
+        user = new User.Admin({
           name,
           email,
           password: hashedPassword,
@@ -85,7 +84,7 @@ const registerUser = async (req, res) => {
 
       await user.save();
 
-      const token = generateUserToken(email , role)
+      const token = generateUserToken(email, role);
 
       res
         .status(201)
@@ -139,6 +138,11 @@ const deleteUser = async (req, res) => {
   try {
     const id = req.params.userId;
 
+    // //validate Id
+    // if (!mongoose.Types.ObjectId.isValid(id)) {
+    //   return res.status(400).json({ message: "Invalid user ID" });
+    // }
+
     let user =
       (await User.Student.findByIdAndDelete(id)) ||
       (await User.Instructor.findByIdAndDelete(id)) ||
@@ -148,13 +152,14 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: "User deleted successfully", user });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error deleting user", error: error.message });
   }
 };
+
 
 const userProfile = async (req, res, next) => {
 
