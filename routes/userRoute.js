@@ -9,9 +9,9 @@ router.get ('/profile' ,authUser,  userProfile);
 
 router.get('/users' , getAllUsers)
 
-router.get('/Checkuser' ,authUser, checkUser)
+router.get('/checkUser' ,authUser, checkUser)
 
-router.get('/:userId' , protect , admin, getUsersById);
+router.get('/:userId' , getUsersById);
 
 router.post('/register' , registerUser);
 

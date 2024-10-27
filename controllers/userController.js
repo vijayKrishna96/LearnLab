@@ -21,10 +21,9 @@ const getAllUsers = async (req, res) => {
 
 const getUsersById = async (req, res) => {
   try {
-    const student = await User.Student.findById(req.params.userId).exec();
-    const instructor = await User.Instructor.findById(req.params.userId).exec();
-    const admin = await User.Admin.findById(req.params.userId).exec();
-
+    const student = await User.Student.findById(req.params.userId).select('name profilePicture  courses').exec();
+    const instructor = await User.Instructor.findById(req.params.userId).select('name profilePicture  courses').exec();
+    const admin = await User.Admin.findById(req.params.userId).select('name profilePicture  courses').exec();
     const userById = [student, instructor, admin].filter(
       (user) => user !== null
     );
@@ -60,6 +59,7 @@ const registerUser = async (req, res) => {
           email,
           password: hashedPassword,
           profilePicture,
+          active: true
         });
       } else if (role === "instructor") {
         const { bio, expertise } = req.body;
@@ -70,6 +70,7 @@ const registerUser = async (req, res) => {
           bio,
           expertise,
           profilePicture,
+          active: true
         });
       } else if (role === "admin") {
         user = new User.Admin({
@@ -77,6 +78,7 @@ const registerUser = async (req, res) => {
           email,
           password: hashedPassword,
           profilePicture,
+          active: true
         });
       } else {
         return res.status(400).json({ message: "Invalid role specified" });
@@ -88,7 +90,7 @@ const registerUser = async (req, res) => {
 
       res
         .status(201)
-        .json({ message: `${role} registered successfully`, user });
+        .json({ message: `${role} registered successfully`, user , success: true });
     }
   } catch (error) {
     res
@@ -195,31 +197,26 @@ const checkUser = async (req, res, next) => {
     const user = req.user;
 
     if (!user) {
-        return res.status(400).json({ success: false, message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    switch (user.role) {
-        case 'admin':
-            // Handle admin-specific logic
-            res.json({ success: true, message: "Admin authenticated" });
-            break;
-        case 'student':
-            // Handle student-specific logic
-            res.json({ success: true, message: "Student authenticated" });
-            break;
-        case 'instructor':
-            // Handle instructor-specific logic
-            res.json({ success: true, message: "Instructor authenticated" });
-            break;
-        default:
-            // Handle unknown roles or errors
-            res.status(403).json({ success: false, message: "Unauthorized role" });
-            break;
+    const roles = ['admin', 'student', 'instructor'];
+
+    if (roles.includes(user.role)) {
+      return res.json({
+        success: true,
+        message: `${user.role.charAt(0).toUpperCase() + user.role.slice(1)} authenticated`,
+        role: user.role,  // Include the role
+        userId: user.userId  // Include the userId
+      });
+    } else {
+      return res.status(403).json({ success: false, message: "Unauthorized role" });
     }
-} catch (error) {
+  } catch (error) {
     res.status(error.status || 500).json({ message: error.message || "Internal server error" });
-}
+  }
 };
+
 
 module.exports = {
   getAllUsers,

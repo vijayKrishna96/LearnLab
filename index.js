@@ -4,6 +4,7 @@ const cors = require("cors");
 const express = require("express");
 const { connectDB } = require("./config/database.js");
 const cookieParser = require("cookie-parser");
+const bodyParser = require('body-parser')
 
 const userRoute = require("./routes/userRoute.js");
 const courseRoute = require("./routes/courseRoute.js");
@@ -27,6 +28,7 @@ app.use(
   })
 );
 
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 

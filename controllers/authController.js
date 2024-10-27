@@ -5,39 +5,50 @@ const { generateUserToken } = require('../utils/generateToken');
 
 
 const loginUser = async (req, res) => {
-    try {
-      const { email, password , role } = req.body;
-  
-      // Check if user exists in any of the roles (Student, Instructor, Admin)
-      const user =
-        await User.Student.findOne({ email }) ||
-        await User.Instructor.findOne({ email }) ||
-        await User.Admin.findOne({ email });
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Compare the provided password with the stored hashed password
-      const isMatch = await bcrypt.compare(password, user.password);
-  
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid password' });
-      }
-  
-      // Generate JWT token
-      const token = generateUserToken(user.email , user.role)
-  
-      // Set token in an HTTP-only cookie
-      res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-  
-      // Send success response
-      res.status(200).json({ message: `${user.role} Loggin Successful`, user: { id: user._id, role: user.role } });
-  
-    } catch (error) {
-      res.status(500).json({ message: 'Error logging in', error: error.message });
+  try {
+    const { email, password } = req.body;
+
+    // Check if user exists in any of the roles (Student, Instructor, Admin)
+    const user =
+      await User.Student.findOne({ email }) ||
+      await User.Instructor.findOne({ email }) ||
+      await User.Admin.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  };
+
+    // Compare the provided password with the stored hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid password' });
+      
+    }
+    // if (!user.active) {
+    //   return res.status(400).json({ message: 'User is not active' });
+    // }
+  
+
+    // Generate JWT token
+    const token = generateUserToken(user.email, user.role , user._id);
+
+    // Set token in an HTTP-only cookie
+    res.cookie('token', token);
+
+    // Send success response with role information
+    res.status(200).json({
+      success: true,
+      message: `${user.role} Login Successful`,
+      user: { id: user._id, role: user.role },
+      
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Error logging in', error: error.message });
+  }
+  
+};
   
   const verifyLogin = async (req, res) => {
     try {

@@ -1,45 +1,104 @@
-const cloudinaryInstance = require("../config/cloudinaryConfig");
+// const cloudinaryInstance = require("../config/cloudinaryConfig");
 const Course = require("../models/courseModel");
+const { cloudinary } = require("../config/cloudinaryConfig");
+const fs = require("fs");
+const path = require("path");
+const { uploadCloudinary } = require("../utils/uploadCloudinary");
 
-// Add a new course
 const addNewCourse = async (req, res) => {
   try {
-    const { instructor, category, price, title, description, modules } =
-      req.body;
+      const {
+          title,
+          description,
+          category,
+          price,
+          modules,
+          instructor
+      } = req.body;
 
-    console.log(req.file.path)
+      // Parse modules data if it's sent as a string
+      const parsedModules = typeof modules === 'string' ? JSON.parse(modules) : modules;
 
-    let imageUrl = "";
-
-    if (!req.file) {
-      if (!req.file) {
-        return res.status(400).json({ message: "image not visible" });
+      // Validate required fields
+      if (!title || !description || !category || !price || !parsedModules) {
+          return res.status(400).json({
+              success: false,
+              message: "All required fields must be provided"
+          });
       }
-    }
-    // Upload image to Cloudinary if an image file is provided
-    const result = await cloudinaryInstance.uploader.upload(req.file.path);
-    imageUrl = result.secure_url;
-    // Create a new course
-   
-    const course = new Course({
-      instructor,
-      category,
-      price,
-      title,
-      description,
-      image: imageUrl,
-      modules: JSON.parse(modules), // Assuming modules is sent as a JSON string in the request body
-    });
 
-    // Save the course to the database
-    await course.save();
+      // Handle image uploads
+      let uploadedImages = [];
+      if (req.files && req.files.length > 0) {
+          // Upload each image to Cloudinary
+          const uploadPromises = req.files.map(async (file, index) => {
+              const publicId = `courses/${Date.now()}-${index}`;
+              const result = await uploadCloudinary(file.path, publicId);
+              
+              return {
+                  publicId: result.public_id,
+                  url: result.secure_url
+              };
+          });
 
-   
+          uploadedImages = await Promise.all(uploadPromises);
+      }
 
-    res.status(201).json({ success: true,  data: course });
+      // Use the first image as course main image
+      const courseImage = uploadedImages[0] || null;
+
+      // Process modules and map remaining images to lessons
+      let imageIndex = 1; // Start from second image, as first is used for course
+      const processedModules = parsedModules.map(module => {
+          const processedLessons = module.lessons.map(lesson => {
+              // Assign an image to the lesson if available
+              const lessonImage = imageIndex < uploadedImages.length 
+                  ? uploadedImages[imageIndex++] 
+                  : null;
+
+              return {
+                  title: lesson.title,
+                  duration: lesson.duration,
+                  image: lessonImage
+              };
+          });
+
+          return {
+              moduleNumber: module.moduleNumber,
+              title: module.title,
+              lessons: processedLessons
+          };
+      });
+
+      // Create new course
+      const newCourse = new Course({
+          title,
+          description,
+          category,
+          price: Number(price),
+          instructor, // Assuming you have user info from auth middleware
+          image: courseImage,
+          modules: processedModules
+      });
+
+      // Save the course
+      await newCourse.save();
+
+      // Send response
+      return res.status(201).json({
+          success: true,
+          message: "Course created successfully",
+          course: newCourse
+      });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server Error" });
+      // Clean up any uploaded files if there's an error
+      console.error("Error in addNewCourse:", error);
+      return res.status(500).json({
+          success: false,
+          message: "Failed to create course",
+          error: error.message
+      });
   }
 };
 
