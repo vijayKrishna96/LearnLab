@@ -13,6 +13,7 @@ const cartRoute = require("./routes/cartRoute.js");
 const categoryRoute = require("./routes/categoryRoute.js");
 const AssignmentRoute = require("./routes/assignmentRoute.js");
 const StudyPlanRoute = require("./routes/studyPlanRoute.js");
+const stripeRoute = require('./routes/stripeRoute.js')
 
 const authRoute = require("./routes/authRoute.js");
 
@@ -41,6 +42,8 @@ app.use("/assignment", AssignmentRoute);
 app.use("/studyPlan", StudyPlanRoute);
 
 app.use("/auth", authRoute);
+
+app.use('/payment', stripeRoute )
 
 app.listen(port, () => {
   console.log(`App Listening on port ${port}`);

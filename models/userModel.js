@@ -6,8 +6,11 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     email: { type: String, unique: true, required: true, trim: true, lowercase: true },
     password: { type: String, required: true },
+    bio: { type: String, default: '' },
+    phone: {type: Number },
     active: {type: Boolean , default: false},
     role: { type: String, enum: ['student', 'instructor', 'admin'], required: true },
+    headline: {type: String},
     profilePicture: { url: { type: String, default: '' }},
 }, { timestamps: true, discriminatorKey: 'role' });
 
@@ -23,10 +26,11 @@ const Student = User.discriminator('student', studentSchema);
 
 //  Instructor schema and discriminator
 const instructorSchema = new mongoose.Schema({
-    bio: { type: String, default: '' },
-    expertise: [{ type: String }],
+    expertise: { type: String },
     rating: { type: Number, default: 0 },
+    students: [{type: mongoose.Schema.Types.ObjectId, ref: 'student' }],
     courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+    
 });
 
 const Instructor = User.discriminator('instructor', instructorSchema);

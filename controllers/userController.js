@@ -1,6 +1,7 @@
 const User = require('../models/userModel')
 const bcrypt = require('bcrypt')
 const { generateUserToken } = require('../utils/generateToken');
+const { uploadCloudinary } = require('../utils/uploadCloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -19,11 +20,46 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const student = await User.Student.findById(req.params.userId).select('name profilePicture  courses email phone bio headline expertise students').exec();
+    const instructor = await User.Instructor.findById(req.params.userId).select('name profilePicture  courses email phone headline bio expertise students').exec();
+    const admin = await User.Admin.findById(req.params.userId).select('name profilePicture email phone').exec();
+    const userById = [student, instructor, admin].filter(
+      (user) => user !== null
+    );
+
+    if (userById.length === 0) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+    res.status(200).json(userById);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getUsersById = async (req, res) => {
   try {
-    const student = await User.Student.findById(req.params.userId).select('name profilePicture  courses').exec();
-    const instructor = await User.Instructor.findById(req.params.userId).select('name profilePicture  courses').exec();
-    const admin = await User.Admin.findById(req.params.userId).select('name profilePicture  courses').exec();
+    // Fetch student details
+    const student = await User.Student.findById(req.params.userId)
+      .select('-password')
+      .exec();
+
+    // Fetch instructor details with populated student fields (name, email, phone)
+    const instructor = await User.Instructor.findById(req.params.userId)
+      .select('-password')
+      .populate({
+        path: 'students',
+        select: 'name email phone' // Only fetch these fields for each student
+      })
+      .exec();
+
+    // Fetch admin details
+    const admin = await User.Admin.findById(req.params.userId)
+      .select('name profilePicture email phone')
+      .exec();
+
+    // Filter to only include found users
     const userById = [student, instructor, admin].filter(
       (user) => user !== null
     );
@@ -101,40 +137,106 @@ const registerUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+ 
+    let updateOperations = { ...req.body };
+
+    // Check if an image file is included in the request
+    if (req.file) {
+      // Upload image to Cloudinary
+      const cloudinaryResponse = await uploadCloudinary(req.file.path, `userImages/${req.params.userId}`);
+
+      if (cloudinaryResponse) {
+        // Add the Cloudinary image URL to the updatedData object
+        updateOperations.profilePicture = { url: cloudinaryResponse.url };
+      }
+    }
+
+    // Ensure courses are appended properly
+    if (req.body.courses || req.body.students) {
+      updateOperations.$addToSet = {};
+
+      // Add courses if provided
+      if (req.body.courses) {
+        updateOperations.$addToSet.courses = { $each: Array.isArray(req.body.courses) ? req.body.courses : [req.body.courses] };
+        delete updateOperations.courses; // Prevent conflict
+      }
+
+      // Add students if provided
+      if (req.body.students) {
+        updateOperations.$addToSet.students = { $each: Array.isArray(req.body.students) ? req.body.students : [req.body.students] };
+        delete updateOperations.students; // Prevent conflict
+      }
+    }
+    // Try updating each user type and filter out any null results
     const [updatedStudent, updatedInstructor, updatedAdmin] = await Promise.all(
       [
-        User.Student.findByIdAndUpdate(req.params.userId, req.body, {
+        User.Student.findByIdAndUpdate(req.params.userId, updateOperations, {
           new: true,
           runValidators: true,
         }).exec(),
-        User.Instructor.findByIdAndUpdate(req.params.userId, req.body, {
+        User.Instructor.findByIdAndUpdate(req.params.userId, updateOperations, {
           new: true,
           runValidators: true,
         }).exec(),
-        User.Admin.findByIdAndUpdate(req.params.userId, req.body, {
+        User.Admin.findByIdAndUpdate(req.params.userId, updateOperations, {
           new: true,
           runValidators: true,
         }).exec(),
       ]
     );
 
-    const updatedUser = [
-      updatedStudent,
-      updatedInstructor,
-      updatedAdmin,
-    ].filter((user) => user !== null);
+    // Filter to find the updated user, if any
+    const updatedUser = [updatedStudent, updatedInstructor, updatedAdmin].find((user) => user !== null);
 
-    if (updatedUser.length === 0) {
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
     res.status(200).json({ message: "User updated successfully", updatedUser });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating user", error: error.message });
+    res.status(500).json({ message: "Error updating user", error: error.message });
   }
 };
+
+const updateInstructor = async (req, res) => {
+  try {
+    // console.log(req.body); // The request body is now { students: [ '6714c3f317f165436c5361c8' ] }
+
+    let updatedData = { ...req.body };
+
+    // Check if an image file is included in the request
+    if (req.file) {
+      // Upload image to Cloudinary
+      const cloudinaryResponse = await uploadCloudinary(req.file.path, `instructorImages/${req.params.userId}`);
+
+      if (cloudinaryResponse) {
+        // Add the Cloudinary image URL to the updatedData object
+        updatedData.profilePicture = { url: cloudinaryResponse.url };
+      }
+    }
+
+    // Update the instructor with the given ID
+    const updatedInstructor = await User.Instructor.findByIdAndUpdate(
+      req.params.userId,
+      {
+        $addToSet: { students: { $each: [req.body.students[0]], $ne: req.body.students[0] } },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).exec();
+
+    if (!updatedInstructor) {
+      return res.status(404).json({ message: "Instructor not found" });
+    }
+
+    res.status(200).json({ message: "Instructor updated successfully", updatedInstructor });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating instructor", error: error.message });
+  }
+};
+
 
 const deleteUser = async (req, res) => {
   try {
@@ -225,5 +327,8 @@ module.exports = {
   updateUser,
   deleteUser,
   checkUser,
-  userProfile
+  userProfile,
+  getUserById,
+  updateInstructor,
+
 };
