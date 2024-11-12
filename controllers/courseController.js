@@ -106,12 +106,15 @@ const addNewCourse = async (req, res) => {
 
 const getAllCourse = async (req, res) => {
   try {
-    const courses = await Course.find(req.query).exec();
+    const courses = await Course.find(req.query)
+      .populate('categoryDetails', 'name')
+      .populate('instructorDetails', 'name email profileImage')
+      .populate('studentDetails', 'name email profileImage')
+      .exec();
+
     res.status(200).json(courses);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching courses", error: error.message });
+    res.status(500).json({ message: "Error fetching courses", error: error.message });
   }
 };
 

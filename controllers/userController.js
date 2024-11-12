@@ -5,20 +5,174 @@ const { uploadCloudinary } = require('../utils/uploadCloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// const getAllUsers = async (req, res) => {
+//   try {
+//       const { role } = req.query;
+
+//       let users = [];
+
+//       if (role === 'student') {
+//           users = await User.Student
+//               .find({})
+//               .select('-password')
+//               .populate({
+//                   path: 'courses',
+//                   select: '-__v' // Exclude version key
+//               });
+//       } 
+//       else if (role === 'instructor') {
+//           users = await User.Instructor
+//               .find({})
+//               .select('-password')
+//               .populate([
+//                   {
+//                       path: 'courses',
+//                       select: '-__v'
+//                   },
+//                   {
+//                       path: 'students',
+//                       select: '-password -__v' // Exclude password and version key
+//                   }
+//               ]);
+//       } 
+//       else if (role === 'admin') {
+//           users = await User.Admin
+//               .find({})
+//               .select('-password');
+//       } 
+//       else {
+//           // If no role specified, fetch all types of users
+//           const [students, instructors, admins] = await Promise.all([
+//               User.Student
+//                   .find({})
+//                   .select('-password')
+//                   .populate({
+//                       path: 'courses',
+//                       select: '-__v'
+//                   }),
+//               User.Instructor
+//                   .find({})
+//                   .select('-password')
+//                   .populate([
+//                       {
+//                           path: 'courses',
+//                           select: '-__v'
+//                       },
+//                       {
+//                           path: 'students',
+//                           select: '-password -__v'
+//                       }
+//                   ]),
+//               User.Admin
+//                   .find({})
+//                   .select('-password')
+//           ]);
+
+//           users = [...students, ...instructors, ...admins];
+//       }
+
+//       res.json({ users });
+//   } catch (error) {
+//       res.status(500).json({ 
+//           message: "Error fetching users", 
+//           error: error.message 
+//       });
+//   }
+// };
+
+
 const getAllUsers = async (req, res) => {
   try {
-    const students = await User.Student.find({});
-    const instructors = await User.Instructor.find({});
-    const admins = await User.Admin.find({});
+      const { role, page = 1, limit = 10, search = '', sortField = 'name', sortOrder = 'asc' } = req.query;
+      
+      const sort = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+      const query = role ? { role } : {};
 
-    const users = [...students, ...instructors, ...admins];
-    res.json({ users });
+      // Add search functionality (example: name and email)
+      if (search) {
+          query.$or = [
+              { name: { $regex: search, $options: 'i' } },
+              { email: { $regex: search, $options: 'i' } }
+          ];
+      }
+
+      let users = [];
+      if (role === 'student') {
+          users = await User.Student
+              .find(query)
+              .select('-password')
+              .populate({
+                  path: 'courses',
+                  select: '-__v'
+              })
+              .sort(sort)
+              .skip((page - 1) * limit)
+              .limit(parseInt(limit, 10));
+      } else if (role === 'instructor') {
+          users = await User.Instructor
+              .find(query)
+              .select('-password')
+              .populate([
+                  { path: 'courses', select: '-__v' },
+                  { path: 'students', select: '-password -__v' }
+              ])
+              .sort(sort)
+              .skip((page - 1) * limit)
+              .limit(parseInt(limit, 10));
+      } else if (role === 'admin') {
+          users = await User.Admin
+              .find(query)
+              .select('-password')
+              .sort(sort)
+              .skip((page - 1) * limit)
+              .limit(parseInt(limit, 10));
+      } else {
+          const [students, instructors, admins] = await Promise.all([
+              User.Student
+                  .find(query)
+                  .select('-password')
+                  .populate({ path: 'courses', select: '-__v' })
+                  .sort(sort)
+                  .skip((page - 1) * limit)
+                  .limit(parseInt(limit, 10)),
+              User.Instructor
+                  .find(query)
+                  .select('-password')
+                  .populate([
+                      { path: 'courses', select: '-__v' },
+                      { path: 'students', select: '-password -__v' }
+                  ])
+                  .sort(sort)
+                  .skip((page - 1) * limit)
+                  .limit(parseInt(limit, 10)),
+              User.Admin
+                  .find(query)
+                  .select('-password')
+                  .sort(sort)
+                  .skip((page - 1) * limit)
+                  .limit(parseInt(limit, 10))
+          ]);
+
+          users = [...students, ...instructors, ...admins];
+      }
+
+      res.json({ 
+          users,
+          pagination: {
+              page: parseInt(page, 10),
+              limit: parseInt(limit, 10),
+              total: users.length,
+          }
+      });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching users", error: error.message });
+      res.status(500).json({
+          message: "Error fetching users",
+          error: error.message
+      });
   }
 };
+
+
 
 const getUserById = async (req, res) => {
   try {
@@ -38,21 +192,94 @@ const getUserById = async (req, res) => {
   }
 };
 
+// const getUsersById = async (req, res) => {
+//   try {
+//     // Fetch student details
+//     const student = await User.Student.findById(req.params.userId)
+//       .select('-password')
+//       .exec();
+
+//     // Fetch instructor details with populated student fields (name, email, phone)
+//     const instructor = await User.Instructor.findById(req.params.userId)
+//       .select('-password')
+//       .populate({
+//         path: 'students',
+//         select: 'name email phone' // Only fetch these fields for each student
+//       })
+//       .exec();
+
+//     // Fetch admin details
+//     const admin = await User.Admin.findById(req.params.userId)
+//       .select('name profilePicture email phone')
+//       .exec();
+
+//     // Filter to only include found users
+//     const userById = [student, instructor, admin].filter(
+//       (user) => user !== null
+//     );
+
+//     if (userById.length === 0) {
+//       return res.status(404).json({ message: "User Not Found" });
+//     }
+//     res.status(200).json(userById);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
+
+
 const getUsersById = async (req, res) => {
   try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '', 
+      sortField = 'name', 
+      sortOrder = 'asc' 
+    } = req.query;
+
+    const sort = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+    const skipStudents = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+    // Search query for populated students
+    const searchQuery = search ? {
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+
     // Fetch student details
     const student = await User.Student.findById(req.params.userId)
       .select('-password')
       .exec();
 
-    // Fetch instructor details with populated student fields (name, email, phone)
+    // Fetch instructor details with paginated and filtered students
     const instructor = await User.Instructor.findById(req.params.userId)
       .select('-password')
       .populate({
         path: 'students',
-        select: 'name email phone' // Only fetch these fields for each student
+        match: searchQuery,
+        select: 'name email phone',
+        options: {
+          sort: sort,
+          skip: skipStudents,
+          limit: parseInt(limit, 10)
+        }
       })
       .exec();
+
+    // If instructor exists, get total count of matching students for pagination
+    let totalStudents = 0;
+    if (instructor) {
+      const fullInstructor = await User.Instructor.findById(req.params.userId)
+        .populate({
+          path: 'students',
+          match: searchQuery,
+          select: '_id' // Only fetch IDs for counting
+        });
+      totalStudents = fullInstructor.students.length;
+    }
 
     // Fetch admin details
     const admin = await User.Admin.findById(req.params.userId)
@@ -67,9 +294,27 @@ const getUsersById = async (req, res) => {
     if (userById.length === 0) {
       return res.status(404).json({ message: "User Not Found" });
     }
-    res.status(200).json(userById);
+
+    // Add pagination info only if an instructor with students was found
+    const response = {
+      users: userById
+    };
+
+    if (instructor && instructor.students) {
+      response.pagination = {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total: totalStudents,
+        totalPages: Math.ceil(totalStudents / parseInt(limit, 10))
+      };
+    }
+
+    res.status(200).json(response);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 };
 

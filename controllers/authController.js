@@ -10,9 +10,9 @@ const loginUser = async (req, res) => {
 
     // Check if user exists in any of the roles (Student, Instructor, Admin)
     const user =
-      await User.Student.findOne({ email }) ||
-      await User.Instructor.findOne({ email }) ||
-      await User.Admin.findOne({ email });
+    await User.Student.findOne({ email }).select('+password') ||
+    await User.Instructor.findOne({ email }).select('+password') ||
+    await User.Admin.findOne({ email }).select('+password');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

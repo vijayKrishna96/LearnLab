@@ -38,8 +38,34 @@ const CourseSchema = new Schema({
   averageRating: { type: Number, default: 0 }
 },
 {
-    timestamps: true
-})
+  timestamps: true,
+  toJSON: { virtuals: true }, // Enable virtuals when converting to JSON
+  toObject: { virtuals: true }
+});
+
+// Add virtual fields
+CourseSchema.virtual('categoryDetails', {
+  ref: 'Category',
+  localField: 'category',
+  foreignField: '_id',
+  justOne: true
+});
+
+CourseSchema.virtual('instructorDetails', {
+  ref: 'User',
+  localField: 'instructor',
+  foreignField: '_id',
+  justOne: true
+});
+
+CourseSchema.virtual('studentDetails', {
+  ref: 'User',
+  localField: 'students',
+  foreignField: '_id'
+});
+// {
+//     timestamps: true
+// })
 
 // Pre-save hook to calculate average rating
 CourseSchema.pre('save', function (next) {
