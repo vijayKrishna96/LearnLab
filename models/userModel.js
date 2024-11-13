@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
 // Base User schema with the discriminatorKey
 const userSchema = new mongoose.Schema({

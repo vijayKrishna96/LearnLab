@@ -1,5 +1,5 @@
 const User = require('../models/userModel')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const { generateUserToken } = require('../utils/generateToken');
 const { uploadCloudinary } = require('../utils/uploadCloudinary');
 
