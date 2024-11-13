@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// Define the Rating and Review schema
+//  Rating and Review schema
 const ReviewSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
@@ -10,21 +10,21 @@ const ReviewSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Define the Lesson schema
+//  Lesson schema
 const LessonSchema = new Schema({
   title: { type: String, required: true },
   duration: { type: String, required: true },
   image:{publicId : String , url : String } // Could be a URL or a file path
 });
 
-// Define the Module schema
+// Module schema
 const ModuleSchema = new Schema({
   moduleNumber: { type: Number, required: true },
   title: { type: String, required: true },
   lessons: [LessonSchema]
 });
 
-// Define the main Course schema
+//  main Course schema
 const CourseSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },

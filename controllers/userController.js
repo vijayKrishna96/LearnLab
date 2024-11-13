@@ -5,81 +5,6 @@ const { uploadCloudinary } = require('../utils/uploadCloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// const getAllUsers = async (req, res) => {
-//   try {
-//       const { role } = req.query;
-
-//       let users = [];
-
-//       if (role === 'student') {
-//           users = await User.Student
-//               .find({})
-//               .select('-password')
-//               .populate({
-//                   path: 'courses',
-//                   select: '-__v' // Exclude version key
-//               });
-//       } 
-//       else if (role === 'instructor') {
-//           users = await User.Instructor
-//               .find({})
-//               .select('-password')
-//               .populate([
-//                   {
-//                       path: 'courses',
-//                       select: '-__v'
-//                   },
-//                   {
-//                       path: 'students',
-//                       select: '-password -__v' // Exclude password and version key
-//                   }
-//               ]);
-//       } 
-//       else if (role === 'admin') {
-//           users = await User.Admin
-//               .find({})
-//               .select('-password');
-//       } 
-//       else {
-//           // If no role specified, fetch all types of users
-//           const [students, instructors, admins] = await Promise.all([
-//               User.Student
-//                   .find({})
-//                   .select('-password')
-//                   .populate({
-//                       path: 'courses',
-//                       select: '-__v'
-//                   }),
-//               User.Instructor
-//                   .find({})
-//                   .select('-password')
-//                   .populate([
-//                       {
-//                           path: 'courses',
-//                           select: '-__v'
-//                       },
-//                       {
-//                           path: 'students',
-//                           select: '-password -__v'
-//                       }
-//                   ]),
-//               User.Admin
-//                   .find({})
-//                   .select('-password')
-//           ]);
-
-//           users = [...students, ...instructors, ...admins];
-//       }
-
-//       res.json({ users });
-//   } catch (error) {
-//       res.status(500).json({ 
-//           message: "Error fetching users", 
-//           error: error.message 
-//       });
-//   }
-// };
-
 
 const getAllUsers = async (req, res) => {
   try {
@@ -191,41 +116,6 @@ const getUserById = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-// const getUsersById = async (req, res) => {
-//   try {
-//     // Fetch student details
-//     const student = await User.Student.findById(req.params.userId)
-//       .select('-password')
-//       .exec();
-
-//     // Fetch instructor details with populated student fields (name, email, phone)
-//     const instructor = await User.Instructor.findById(req.params.userId)
-//       .select('-password')
-//       .populate({
-//         path: 'students',
-//         select: 'name email phone' // Only fetch these fields for each student
-//       })
-//       .exec();
-
-//     // Fetch admin details
-//     const admin = await User.Admin.findById(req.params.userId)
-//       .select('name profilePicture email phone')
-//       .exec();
-
-//     // Filter to only include found users
-//     const userById = [student, instructor, admin].filter(
-//       (user) => user !== null
-//     );
-
-//     if (userById.length === 0) {
-//       return res.status(404).json({ message: "User Not Found" });
-//     }
-//     res.status(200).json(userById);
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// };
 
 
 const getUsersById = async (req, res) => {
@@ -445,7 +335,7 @@ const updateUser = async (req, res) => {
 
 const updateInstructor = async (req, res) => {
   try {
-    // console.log(req.body); // The request body is now { students: [ '6714c3f317f165436c5361c8' ] }
+    // console.log(req.body); 
 
     let updatedData = { ...req.body };
 

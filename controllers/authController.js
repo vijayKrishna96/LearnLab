@@ -25,11 +25,10 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid password' });
       
     }
-    // if (!user.active) {
-    //   return res.status(400).json({ message: 'User is not active' });
-    // }
+    if (!user.active) {
+      return res.status(400).json({ message: 'User is not active' });
+    }
   
-
     // Generate JWT token
     const token = generateUserToken(user.email, user.role , user._id);
 

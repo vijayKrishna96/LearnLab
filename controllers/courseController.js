@@ -1,6 +1,4 @@
-// const cloudinaryInstance = require("../config/cloudinaryConfig");
 const Course = require("../models/courseModel");
-// const {User, Student, Instructor, Admin} = require("../models/userModel")
 const { cloudinary } = require("../config/cloudinaryConfig");
 const fs = require("fs");
 const path = require("path");
@@ -209,7 +207,7 @@ const updateCourse = async (req, res) => {
         });
       }
 
-      // Parse modules data if it's sent as a string
+      // Parse modules data it's sent as a string
       const parsedModules = typeof modules === 'string' ? JSON.parse(modules) : modules;
 
       // Handle image uploads
