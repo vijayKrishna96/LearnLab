@@ -434,7 +434,7 @@ const checkUser = async (req, res, next) => {
     const user = req.user;
 
     if (!user) {
-      return res.status(401).json({ success: false, message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User is not authenticated" });
     }
 
     const roles = ['admin', 'student', 'instructor'];
