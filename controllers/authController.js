@@ -32,8 +32,13 @@ const loginUser = async (req, res) => {
     // Generate JWT token
     const token = generateUserToken(user.email, user.role , user._id);
 
+    const options = {
+      httpOnly: true,
+      secure: true,
+    }
+
     // Set token in an HTTP-only cookie
-    res.cookie('token', token);
+    res.cookie('token', token , options);
 
     // Send success response with role information
     res.status(200).json({
